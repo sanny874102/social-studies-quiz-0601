@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>六年級社會科 線上練習大題庫（翰林版 6上社會期中考 第1、2單元）</title>
+    <!-- 引入 Tailwind CSS 與 FontAwesome 圖標 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap');
+        body { font-family: 'Noto Sans TC', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-50 flex flex-col items-center justify-center p-4 min-h-screen">
+
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl p-6 md:p-8 space-y-6">
+        
+        <!-- 標題區 -->
+        <div class="text-center space-y-2">
+            <h1 class="text-2xl md:text-3xl font-bold text-blue-600 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-book-open"></i> 六年級社會科 線上練習大題庫
+            </h1>
+            <p class="text-slate-600 text-sm md:text-base">範圍：翰林版 6上社會期中考（第 1、2 單元完整題庫）</p>
+        </div>
+
+        <div id="setup-screen" class="space-y-6">
+            <!-- 模式選擇 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4">
+                    <label for="question-count" class="font-semibold text-slate-700 text-lg flex items-center gap-2">
+                        <i class="fa-solid fa-list-check text-blue-500"></i> 選擇測驗題數：
+                    </label>
+                    <select id="question-count" class="w-full md:w-auto min-w-[240px] px-4 py-2.5 bg-white border border-slate-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 font-medium">
+                        <option value="10">挑戰 10 題（快速隨機練習）</option>
+                        <option value="25">挑戰 25 題（精選中量測驗）</option>
+                        <option value="all" selected>挑戰全部題庫（共 60 題）</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- 開始按鈕 -->
+            <button onclick="startQuiz()" class="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-lg">
+                <i class="fa-solid fa-play"></i> 開始新測驗
+            </button>
+        </div>
+
+        <!-- 測驗進行畫面 (預設隱藏) -->
+        <div id="quiz-screen" class="hidden space-y-6">
+            <div class="flex justify-between items-center border-b pb-3">
+                <span id="progress-text" class="text-slate-500 font-medium">題目 1 / 10</span>
+                <span id="score-text" class="text-blue-600 font-bold">目前得分：0 分</span>
+            </div>
+
+            <div id="question-container" class="space-y-4">
+                <!-- 動態載入題目 -->
+            </div>
+
+            <!-- 詳解區 (作答後顯示) -->
+            <div id="explanation-box" class="hidden bg-sky-50 border border-sky-200 rounded-xl p-4 text-slate-700 space-y-1">
+                <div class="font-bold text-sky-800 flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-info"></i> 觀念解析：
+                </div>
+                <p id="explanation-text" class="text-sm md:text-base"></p>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button id="next-btn" onclick="nextQuestion()" class="hidden px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow transition duration-200">
+                    下一題 <i class="fa-solid fa-arrow-right ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 結算畫面 (預設隱藏) -->
+        <div id="result-screen" class="hidden text-center space-y-6 py-6">
+            <div class="space-y-2">
+                <h2 class="text-3xl font-bold text-slate-800">🎉 測驗完成！</h2>
+                <p id="final-score" class="text-2xl font-bold text-blue-600"></p>
+            </div>
+            <button onclick="resetQuiz()" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg transition duration-200">
+                <i class="fa-solid fa-rotate-right mr-1"></i> 重新測驗
+            </button>
+        </div>
+
+        <!-- 分享與網址區 -->
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row items-center justify-between gap-3">
+            <span class="text-sm font-medium text-slate-600 flex items-center gap-2">
+                <i class="fa-solid fa-globe text-blue-500"></i> 分享測驗網址：
+            </span>
+            <div class="flex w-full md:w-auto gap-2">
+                <input type="text" id="share-url" readonly value="" class="w-full md:w-80 px-3 py-1.5 bg-white border border-slate-300 rounded-lg text-sm text-slate-600 focus:outline-none">
+                <button onclick="copyUrl()" class="px-4 py-1.5 bg-sky-600 hover:bg-sky-700 text-white text-sm font-medium rounded-lg shadow transition flex items-center gap-1 shrink-0">
+                    <i class="fa-solid fa-copy"></i> 複製網址
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // 設定當前頁面網址到分享輸入框
+        document.getElementById('share-url').value = window.location.href;
+
+        // 60 題完整題庫資料（整合翰林版6上社會期中考第1、2單元：消費、理財、戰後社會發展、公共建設與高科技產業）
+        const allQuestions = [
+            // 第一單元：聰明消費與理財規劃 (是非題)
+            { type: "TF", q: "經濟快速發展通常會減少對土地、水資源與電力的需求。", ans: false, explanation: "經濟與工業快速發展通常會大幅增加對土地、水資源與電力的需求。" },
+            { type: "TF", q: "為了讓消費更便利，除了使用現金付費，近年也出現電子票證、信用卡、行動支付等多元的支付方式。", ans: true, explanation: "現代消費支付工具多元，包含現金、電子票證、行動支付與信用卡等。" },
+            { type: "TF", q: "家人之間通常不會面臨消費取捨的問題。", ans: false, explanation: "家庭資源有限，面對多元需求常需面臨消費取捨與優先順序安排。" },
+            { type: "TF", q: "定期存款在存滿一定時間後，可領取比活期存款高的利息。", ans: true, explanation: "定期存款約定存款期限，其利率通常較活期存款高。" },
+            { type: "TF", q: "當店家推出新產品或限量優惠時，購買前就不需要先想清楚是否真的需要。", ans: false, explanation: "消費前應先評估個人實際需求，避免因一時衝動而買下不需要的商品。" },
+            { type: "TF", q: "理財可能帶來獲利，也可能出現虧損，這是需要承擔的風險。", ans: true, explanation: "任何投資理財（如股票等）都存在獲利與虧損的風險。" },
+            { type: "TF", q: "隨著消費者的需求愈來愈多樣，市場上的商品種類也不斷增加。", ans: true, explanation: "消費需求的多樣化會帶動生產者不斷創新與開發新商品。" },
+            { type: "TF", q: "消費前，應先蒐集相關資訊，確認商品內容、售後服務以及退換貨規定。", ans: true, explanation: "做好事前功課與查詢評價能有效保障自身消費權益。" },
+            { type: "TF", q: "衣物被送進垃圾掩埋場後，因為短時間容易分解，所以不會造成環境汙染。", ans: false, explanation: "許多衣物材質或化學纖維在掩埋場不易迅速分解，可能對環境造成負擔。" },
+            { type: "TF", q: "買到問題商品，不需要注意期限，只要憑發票、保證書或購買證明就可以向賣家要求退費或換貨。", ans: true, explanation: "憑藉購買證明與發票，在合理期限內依法可要求退換貨。" },
+            { type: "TF", q: "兌換其他國家的貨幣時，必須根據當日匯率估算可以兌換的金額。", ans: true, explanation: "匯率隨市場變動，兌換外幣前須先查詢當日匯率進行估算。" },
+            { type: "TF", q: "消費者優先購買友善環境的商品與服務，也是愛護環境的行為之一。", ans: true, explanation: "綠色消費與友善環境產品能減少對地球生態的破壞。" },
+            { type: "TF", q: "培養理性的消費習慣是「先購買再規劃」，這樣可以避免需要的時候沒有東西可以用。", ans: false, explanation: "理性的消費習慣應是「先規劃再購買」，避免支出超出預算。" },
+            { type: "TF", q: "記錄收入與支出的方式目前只有紙本記帳一種類型。", ans: false, explanation: "除了紙本記帳外，現在還有許多記帳手機App等多元工具。" },
+            { type: "TF", q: "投資前，評估自己能承擔的風險，並依照需求決定支出的優先順序，是良好的理財觀念。", ans: true, explanation: "妥善評估風險與做好財務規劃是理財成功的關鍵。" },
+
+            // 第二單元：政府發展與公共建設、高科技產業 (是非題)
+            { type: "TF", q: "戰後初期中華民國政府來到臺灣，當時臺灣物價平穩、糧食充足。", ans: false, explanation: "戰後初期物資缺乏、通貨膨脹嚴重，面臨許多經濟與社會問題。" },
+            { type: "TF", q: "臺灣不僅生產高階電子零件，也具備設計晶片的能力。", ans: true, explanation: "臺灣的高科技產業在晶片設計與半導體製造上具有全球領先地位。" },
+            { type: "TF", q: "戰後美援提供的麵粉和奶粉，使麵粉與乳製品在臺灣逐漸普及。", ans: true, explanation: "戰後美援物資改變了部分臺灣人的飲食習慣，使麵製品與奶粉逐漸普及。" },
+            { type: "TF", q: "民國60年代，國際上發生能源危機，產油國限制石油出口，導致國際油價大幅下跌。", ans: false, explanation: "產油國限制石油出口導致國際油價「大幅上漲」，引發全球能源危機。" },
+            { type: "TF", q: "臺灣的第一個「加工出口區」設立在新竹。", ans: false, explanation: "臺灣的第一個加工出口區設立在「高雄」。" },
+            { type: "TF", q: "臺中在日治時期就已發展煉鐵、造船等工業，並擁有良好的港口與交通條件。", ans: false, explanation: "擁有良好港口與重工業基礎的是「高雄」，而非臺中。" },
+            { type: "TF", q: "公共建設雖然能帶來好處，但建造時需要大量金錢和時間，如果後續營運不善，也可能成為政府的財政負擔。", ans: true, explanation: "公共建設若缺乏妥善營運與維護，可能造成龐大的財政負擔。" },
+            { type: "TF", q: "鐵路、高速公路和機場等建設，能讓人們移動更便利。", ans: true, explanation: "完善的交通建設大幅縮短運輸時間並便利民眾移動。" },
+            { type: "TF", q: "公共建設只會帶來好處，不需要考慮經費與後續經營。", ans: false, explanation: "公共建設耗費巨大，必須審慎評估經費效益與後續經營管理。" },
+            { type: "TF", q: "交通建設完善後，各式各樣的商店也隨之增加，提供更多工作機會。", ans: true, explanation: "交通便利會帶動人潮聚集與周邊商業及服務業的繁榮。" },
+            { type: "TF", q: "隨著高速公路建設與科技園區的設立，臺灣各地的城鄉差距已經完全消失，沒有區域發展不均的問題。", ans: false, explanation: "雖然交通與科技帶動發展，但城鄉差距與區域發展不均仍然存在。" },
+            { type: "TF", q: "「三七五減租」是政府於民國38年推動，為改善農民生活，降低租金負擔的政策。", ans: true, explanation: "三七五減租是戰後初期推動的重要土地改革政策之一。" },
+            { type: "TF", q: "隨著電腦與資訊電子產業成為外銷主力，政府陸續在臺灣各地設立科學園區。", ans: true, explanation: "為了發展高科技產業，政府陸續設立新竹、臺中、南部等科學園區。" },
+            { type: "TF", q: "消費後若買到問題商品，只能自認倒楣，不能要求退換貨。", ans: false, explanation: "消費者享有法定權益，買到瑕疵或問題商品可依法要求退換貨。" },
+            { type: "TF", q: "匯率是不會變動的，出國前不需要先查詢當日匯率。", ans: false, explanation: "匯率會隨著國際市場隨時變動，出國前務必查詢當日匯率。" },
+
+            // 第一單元與第二單元 (選擇題)
+            { type: "MC", q: "在貨幣出現以前,人們主要是透過什麼方式來獲取生活所需？", options: ["使用信用卡", "以物易物", "行動支付", "電子票證"], ans: 1, explanation: "在沒有貨幣的古代，人們透過「以物易物」來交換所需物資。" },
+            { type: "MC", q: "為了存到畢業旅行的費用，小瑞可以怎麼做呢？", options: ["請父母負擔全部費用", "設定目標並做好規劃", "把零用錢優先花在想買的東西上", "快要出發前再開始準備費用"], ans: 1, explanation: "設定明確目標並做好財務規劃與儲蓄，才能順利達成儲蓄目標。" },
+            { type: "MC", q: "工業區的設立帶來繁榮，也可能產生哪些負面影響？", options: ["交通壅塞、噪音與空氣汙染", "空氣變得零汙染", "就業機會減少", "路上完全沒車"], ans: 0, explanation: "工業區帶動就業與繁榮的同時，也常伴隨車流增加、噪音與空氣汙染等問題。" },
+            { type: "MC", q: "以「價格」來決定消費選擇時，應該採取什麼樣的順序？", options: ["先設定預算，再挑選價格合理的商品", "先挑選商品，再設定預算", "先買最貴的，再回家存錢", "不用考慮預算，想買就買"], ans: 0, explanation: "理性的消費應先設定預算，再挑選符合預算與需求的合理商品。" },
+            { type: "MC", q: "部分地主在「耕者有其田」政策獲得補償金後，轉而投入哪個領域，間接促進了產業發展？", options: ["教育業", "農業", "工商業", "醫療業"], ans: 2, explanation: "政府發放地租補償金，引導地主將資金轉投資工商業，促進了臺灣產業轉型。" },
+            { type: "MC", q: "哪一種理財方式較適合作為日常支出與緊急預備金？", options: ["保險", "股票", "定期存款", "活期存款"], ans: 3, explanation: "活期存款存取方便，最適合用來支應日常開銷與緊急預備金。" },
+            { type: "MC", q: "下列什麼是設立加工出口區帶來的社會變化？", options: ["農村人口減少", "提供大量就業機會", "促進道路、鐵路等交通建設發展", "以上皆是"], ans: 3, explanation: "加工出口區吸引大量人口移入都市、提供就業並帶動周邊交通與基礎建設發展。" },
+            { type: "MC", q: "下列哪項公共建設完成後，大幅縮短了臺灣西部主要都市的交通運輸時間？", options: ["石門水庫", "高雄造船廠", "中山高速公路", "新竹科學園區"], ans: 2, explanation: "中山高速公路（國道一號）通車後，大幅縮短了臺灣西部南北的交通運輸時間。" },
+            { type: "MC", q: "戰後臺灣從農業走向工商與科技產業的轉型，經濟的快速發展獲得了什麼美譽？", options: ["世界工廠", "農業矽谷", "觀光寶島", "經濟奇蹟"], ans: 3, explanation: "臺灣戰後經濟快速起飛，獲得了「經濟奇蹟」的美譽。" },
+            { type: "MC", q: "在臺灣設立加工出口區初期，哪一個群體進入工廠工作，成為生產線上重要的勞動力？", options: ["退休人士", "兒童", "女性", "外籍移工"], ans: 2, explanation: "早期加工出口區吸引大量女性進入工廠就業，成為推動臺灣工業成長的重要勞動力。" },
+            { type: "MC", q: "臺灣的高科技產業在全球的哪一項製造領域占有「領先地位」？", options: ["飛機引擎", "晶圓製造", "石油開採", "太空梭製造"], ans: 1, explanation: "臺灣的半導體與晶圓製造技術在全球供應鏈中占有絕對領先地位。" },
+            { type: "MC", q: "網購時若遇到可疑訊息，可以先停下來與家人討論。撥打下列什麼專線可以查證自己是否遭到詐騙呢？", options: ["165", "119", "113", "168"], ans: 0, explanation: "「165」為內政部警政署設立的反詐騙諮詢專線。" },
+            { type: "MC", q: "下列何者是記帳對我們最主要的幫助？", options: ["增加每個月的零用錢", "掌握收入和支出情形", "立刻存到很多錢", "再也不用理財規劃"], ans: 1, explanation: "記帳能幫助我們清楚掌握每一筆收入與支出的流向。" },
+            { type: "MC", q: "下列何者不屬於政府選擇高雄作為重工業發展中心的原因？", options: ["日治時期已發展煉鐵、造船等工業", "良好的港口與交通條件", "具備擴大工業聚落的基礎", "較不容易造成空氣汙染"], ans: 3, explanation: "發展重工業會消耗大量能源並產生汙染，並非因為不容易造成空氣汙染。" },
+            { type: "MC", q: "阿亞在選購水壺時，仔細檢查了材質，並優先挑選最耐摔且不漏水的款式。這代表她最重視什麼需求？", options: ["品質耐用", "新穎設計", "價格實惠", "便利服務"], ans: 0, explanation: "重視耐摔與不漏水反映出消費者對商品「品質耐用」的核心需求。" },
+            { type: "MC", q: "發展重工業需要大量鋼鐵與石油原料，如果完全依靠進口會有什麼風險？", options: ["成本低且穩定", "減少汙染", "提升環保意識", "成本高，且容易受國際情勢影響"], ans: 3, explanation: "完全依賴進口原料成本較高，且容易受到國際政治與能源危機等情勢影響。" },
+            { type: "MC", q: "下列哪一項最符合友善環境的消費行為？", options: ["買很多新衣服，穿幾次就丟掉", "選購使用天然或再生材料製成的商品", "把還能穿的衣物直接當垃圾丟棄", "只挑最便宜的商品，即便製作過程對環境有害"], ans: 1, explanation: "選購天然或再生材料製成的商品能減少環境負荷，符合友善環境原則。" },
+            { type: "MC", q: "第二次世界大戰後臺灣的基礎建設大多毀損，後來是由哪一個國家援助重建？", options: ["日本", "德國", "韓國", "美國"], ans: 3, explanation: "戰後初期美國透過美援提供經費與物資，協助臺灣重建基礎建設與經濟。" },
+            { type: "MC", q: "臺灣在民國67年通車的高速公路可以串聯哪兩地的交通呢？", options: ["臺北－花蓮", "基隆－臺東", "基隆－高雄", "高雄－宜蘭"], ans: 2, explanation: "中山高速公路全線通車後，北起基隆、南至高雄，串聯西部主要都會區。" },
+            { type: "MC", q: "民國60年代使得臺灣用電需求上升的原因是什麼？", options: ["生產活動擴大", "老舊電廠退役", "少子化現象", "發展農業"], ans: 0, explanation: "民國60年代隨著工業發展與生產活動擴大，工廠與民生用電需求大幅增加。" },
+            { type: "MC", q: "小夏的爸爸在一家鋼鐵廠擔任作業員，小夏爸爸從事的是哪一種產業呢？", options: ["重工業", "服務業", "農業", "林業"], ans: 0, explanation: "鋼鐵廠製造鋼鐵原料屬於重工業範疇。" },
+            { type: "MC", q: "民國60年代政府為了提升國家的競爭力，推動什麼政策？", options: ["耕者有其田", "十大建設", "國防自主", "加工出口區"], ans: 1, explanation: "蔣經國院長於民國60年代推動「十大建設」，奠定臺灣重工業與交通基礎。" },
+            { type: "MC", q: "設立科學園區發展高科技產業能夠帶來許多正面的效益，下列何者「並不屬於」？", options: ["提供大量就業機會", "排擠其他產業的土地需求", "促進周邊區域發展", "吸引人口移入"], ans: 1, explanation: "排擠其他產業用地屬於開發帶來的副作用或壓力，而非正面效益。" },
+            { type: "MC", q: "臺北市內湖區聚集了許多高科技產業，每到上下班時間總會有大量車流。這顯示發展高科技產業可能帶來什麼問題？", options: ["製造過多垃圾", "人口生育過多", "交通壅塞", "城鄉差距"], ans: 2, explanation: "大量就業人口集中通勤容易導致上下班時間交通壅塞。" },
+            { type: "MC", q: "臺灣在各項產業的發展上都有獨到之處，目前臺灣主要外銷出口的產品，應該是下列何者？", options: ["稻米", "石油與稀有礦物", "鞋子", "資訊電子產品"], ans: 0, explanation: "現今臺灣出口外銷的主力為半導體與資訊電子產品。" },
+            { type: "MC", q: "臺灣的高科技產業在全世界具有領先地位，生產了許多重要高階零件，其中一項占全球生產量將近七成，請問是？", options: ["晶圓", "稻米", "茶葉", "蔗糖"], ans: 0, explanation: "臺灣的晶圓代工與半導體製造產能占全球近七成，具舉足輕重的地位。" },
+            { type: "MC", q: "下列哪一個選項不屬於規劃理財前蒐集資料的方式？", options: ["閱讀報章雜誌", "收看財經報導", "諮詢專業理財人員", "盲目聽信網路來路不明的明牌"], ans: 3, explanation: "理財前應透過合法、專業管道蒐集資訊，盲目聽信明牌存在極大風險。" },
+            { type: "MC", q: "小桃一家討論家中財務分配，哪一個觀念較不適合？", options: ["媽媽想存緊急預備金以備不時之需", "爸爸希望有共同記帳本了解金錢去向", "小桃聽說股票賺錢快，建議家人直接把所有儲蓄轉成投資股票", "妹妹建議諮詢專業理財人員"], ans: 2, explanation: "將所有儲蓄全部投入高風險的股票缺乏分散風險概念，作法不適當。" },
+            { type: "MC", q: "戰後初期，美國提供臺灣奶粉的主要目的是什麼？", options: ["美國奶粉滯銷", "過期奶粉再利用", "提供民生物資補充營養", "推廣美式飲食文化"], ans: 2, explanation: "戰後初期物資匱乏，美援提供奶粉與麵粉旨在提供民生物資並改善民眾營養狀況。" },
+            { type: "MC", q: "加工出口區的產品最主要是透過什麼交通方式運送至國外？", options: ["海運", "陸運", "空運", "以上皆是"], ans: 0, explanation: "加工出口區多鄰近港口，外銷產品主要透過海運大量輸送到世界各地。" }
+        ];
+
+        let currentQuizQuestions = [];
+        let currentIndex = 0;
+        let score = 0;
+        let selectedOption = null;
+
+        function startQuiz() {
+            const countValue = document.getElementById('question-count').value;
+            let shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
+
+            if (countValue === "all") {
+                currentQuizQuestions = shuffled;
+            } else {
+                const limit = parseInt(countValue);
+                currentQuizQuestions = shuffled.slice(0, limit);
+            }
+
+            currentIndex = 0;
+            score = 0;
+
+            document.getElementById('setup-screen').classList.add('hidden');
+            document.getElementById('quiz-screen').classList.remove('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            selectedOption = null;
+            document.getElementById('next-btn').classList.add('hidden');
+            document.getElementById('explanation-box').classList.add('hidden');
+            
+            const qData = currentQuizQuestions[currentIndex];
+            document.getElementById('progress-text').innerText = `題目 ${currentIndex + 1} / ${currentQuizQuestions.length}`;
+            document.getElementById('score-text').innerText = `目前得分：${score} 分`;
+
+            const container = document.getElementById('question-container');
+            
+            if (qData.type === "TF") {
+                container.innerHTML = `
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 mb-4">${currentIndex + 1}. （是非題）${qData.q}</h3>
+                    <div class="space-y-3">
+                        <button onclick="checkAnswer(true, this)" class="w-full text-left p-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-xl font-medium text-slate-700 transition flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-500">○</span> 正確 (O)
+                        </button>
+                        <button onclick="checkAnswer(false, this)" class="w-full text-left p-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-xl font-medium text-slate-700 transition flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-500">×</span> 錯誤 (X)
+                        </button>
+                    </div>
+                `;
+            } else {
+                let optionsHtml = '';
+                qData.options.forEach((opt, idx) => {
+                    optionsHtml += `
+                        <button onclick="checkAnswer(${idx}, this)" class="w-full text-left p-4 bg-slate-50 hover:bg-blue-50 border border-slate-200 rounded-xl font-medium text-slate-700 transition flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-full bg-white border border-slate-300 flex items-center justify-center font-bold text-slate-500">${idx + 1}</span> ${opt}
+                        </button>
+                    `;
+                });
+
+                container.innerHTML = `
+                    <h3 class="text-lg md:text-xl font-bold text-slate-800 mb-4">${currentIndex + 1}. （選擇題）${qData.q}</h3>
+                    <div class="space-y-3">
+                        ${optionsHtml}
+                    </div>
+                `;
+            }
+        }
+
+        function checkAnswer(userAnswer, btnElement) {
+            if (selectedOption !== null) return;
+            selectedOption = userAnswer;
+
+            const qData = currentQuizQuestions[currentIndex];
+            const isCorrect = (userAnswer === qData.ans);
+
+            const buttons = document.querySelectorAll('#question-container button');
+            buttons.forEach(btn => btn.disabled = true);
+
+            if (isCorrect) {
+                score += Math.round(100 / currentQuizQuestions.length);
+                btnElement.classList.remove('bg-slate-50', 'hover:bg-blue-50');
+                btnElement.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-800');
+                btnElement.querySelector('span').classList.add('bg-emerald-500', 'text-white');
+            } else {
+                btnElement.classList.remove('bg-slate-50', 'hover:bg-blue-50');
+                btnElement.classList.add('bg-rose-100', 'border-rose-500', 'text-rose-800');
+                btnElement.querySelector('span').classList.add('bg-rose-500', 'text-white');
+
+                buttons.forEach((btn, idx) => {
+                    if (qData.type === "TF") {
+                        if ((idx === 0 && qData.ans === true) || (idx === 1 && qData.ans === false)) {
+                            btn.classList.remove('bg-slate-50');
+                            btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-800');
+                        }
+                    } else {
+                        if (idx === qData.ans) {
+                            btn.classList.remove('bg-slate-50');
+                            btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-800');
+                        }
+                    }
+                });
+            }
+
+            // 顯示詳細解說
+            document.getElementById('explanation-text').innerText = qData.explanation;
+            document.getElementById('explanation-box').classList.remove('hidden');
+
+            document.getElementById('score-text').innerText = `目前得分：${score} 分`;
+            document.getElementById('next-btn').classList.remove('hidden');
+        }
+
+        function nextQuestion() {
+            currentIndex++;
+            if (currentIndex < currentQuizQuestions.length) {
+                loadQuestion();
+            } else {
+                document.getElementById('quiz-screen').classList.add('hidden');
+                document.getElementById('result-screen').classList.remove('hidden');
+                document.getElementById('final-score').innerText = `您的總得分：${score} 分`;
+            }
+        }
+
+        function resetQuiz() {
+            document.getElementById('setup-screen').classList.remove('hidden');
+            document.getElementById('quiz-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.add('hidden');
+        }
+
+        function copyUrl() {
+            const urlInput = document.getElementById('share-url');
+            urlInput.select();
+            urlInput.setSelectionRange(0, 99999);
+            document.execCommand('copy');
+            alert('網址已成功複製！');
+        }
+    </script>
+</body>
+</html>
